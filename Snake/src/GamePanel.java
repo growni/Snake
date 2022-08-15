@@ -4,29 +4,15 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.util.Arrays;
 import java.util.Random;
+import static Utils.Values.*;
+
 
 public class GamePanel extends JPanel implements ActionListener {
 
-    static final int SCREEN_WIDTH = 600;
-    static final int SCREEN_HEIGHT = 600;
-    static final int UNIT_SIZE = 25;
-    static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
-    static int DELAY = 100;
-    final int x[] = new int[GAME_UNITS];
-    final int y[] = new int[GAME_UNITS];
-    int bodyParts = 6;
-    int applesEaten = 0;
-    int appleX;
-    int appleY;
-    int shortenerX = -1;
-    int shortenerY = -1;
-    char direction = 'R';
-    boolean running = false;
-    Timer timer;
+    Apple apple;
+    Shortener shortener;
+    Snake snake;
     Random random;
-
-
-
 
     GamePanel() {
         random = new Random();
@@ -38,7 +24,8 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void startGame() {
-        newApple();
+        snake = new Snake();
+        apple = new Apple();
         running = true;
         timer = new Timer(DELAY, this);
         timer.start();
@@ -57,15 +44,15 @@ public class GamePanel extends JPanel implements ActionListener {
 //                g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
 //            }
             g.setColor(Color.red);
-            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+            g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
 
             for (int i = 0; i < bodyParts; i++) {
                 if (i == 0) {
                     g.setColor(Color.green);
-                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(xPossition[i], yPossition[i], UNIT_SIZE, UNIT_SIZE);
                 } else {
                     g.setColor(new Color(45, 180, 0));
-                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(xPossition[i], yPossition[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
             g.setColor(Color.red);
@@ -76,67 +63,12 @@ public class GamePanel extends JPanel implements ActionListener {
             gameOver(g);
         }
         //visualize shortener
-        if (applesEaten % 7 == 0 && applesEaten > 0) {
+        if (applesEaten % 7 == 0 && applesEaten > 0 && shortener == null) {
+            shortener = new Shortener();
+        }
+        if(shortener != null) {
             g.setColor(Color.orange);
-            g.fillOval(shortenerX, shortenerY, UNIT_SIZE, UNIT_SIZE);
-        }
-
-
-    }
-
-    public void newApple() {
-        appleX = random.nextInt((int) (SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
-        appleY = random.nextInt((int) (SCREEN_HEIGHT / UNIT_SIZE)) * UNIT_SIZE;
-        if(applesEaten % 7 == 0 && applesEaten != 0) {
-            newShortener();
-        }
-    }
-
-    public void newShortener() {
-        shortenerX = random.nextInt((int) (SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
-        shortenerY = random.nextInt((int) (SCREEN_HEIGHT / UNIT_SIZE)) * UNIT_SIZE;
-
-    }
-
-    public void move() {
-        for (int i = bodyParts; i > 0; i--) {
-            x[i] = x[i - 1];
-            y[i] = y[i - 1];
-            // System.out.printf("x: %d, y: %d \n", x[i], y[i]);
-        }
-        switch (direction) {
-            case 'U':
-                y[0] = y[0] - UNIT_SIZE;
-                break;
-            case 'D':
-                y[0] = y[0] + UNIT_SIZE;
-                break;
-            case 'L':
-                x[0] = x[0] - UNIT_SIZE;
-                break;
-            case 'R':
-                x[0] = x[0] + UNIT_SIZE;
-                break;
-        }
-    }
-
-    public void checkApple() {
-        if ((x[0] == appleX) && (y[0] == appleY)) {
-            bodyParts++;
-            applesEaten++;
-            newApple();
-        }
-        if (applesEaten % 2 == 0 && applesEaten != 0) {
-            //quicken the gameplay
-            timer.setDelay(DELAY - applesEaten);
-
-        }
-    }
-
-    public void checkShortener() {
-        if (x[0] == shortenerX && y[0] == shortenerY) {
-            bodyParts /= 2;
-            applesEaten++;
+            g.fillOval(shortener.getX(), shortener.getY(), UNIT_SIZE, UNIT_SIZE);
         }
     }
 
@@ -144,27 +76,27 @@ public class GamePanel extends JPanel implements ActionListener {
         //check if head collides with body
         for (int i = bodyParts; i > 0; i--) {
 
-            if ((x[0] == x[i]) && (y[0] == y[i])) {
+            if ((xPossition[0] == xPossition[i]) && (yPossition[0] == yPossition[i])) {
                 running = false;
-                System.out.printf("Snake bit itself at: \nx[0] = %d, x[i] = %d \ny[0] = %d, y[i] = %d", x[0], x[i], y[0], y[i]);
+                System.out.printf("Snake bit itself at: \nx[0] = %d, x[i] = %d \ny[0] = %d, y[i] = %d", xPossition[0], xPossition[i], yPossition[0], yPossition[i]);
             }
         }
 
         //check if head touches left border
-        if (x[0] < 0) {
-            x[0] = SCREEN_WIDTH - UNIT_SIZE;
+        if (xPossition[0] < 0) {
+            xPossition[0] = SCREEN_WIDTH - UNIT_SIZE;
         }
         //check if head touches right border
-        if (x[0] >= SCREEN_WIDTH) {
-            x[0] = 0;
+        if (xPossition[0] >= SCREEN_WIDTH) {
+            xPossition[0] = 0;
         }
         //check if head touches top border
-        if (y[0] < 0) {
-            y[0] = SCREEN_HEIGHT - UNIT_SIZE;
+        if (yPossition[0] < 0) {
+            yPossition[0] = SCREEN_HEIGHT - UNIT_SIZE;
         }
         //check if head touches bottom border
-        if (y[0] >= SCREEN_HEIGHT) {
-            y[0] = 0;
+        if (yPossition[0] >= SCREEN_HEIGHT) {
+            yPossition[0] = 0;
         }
         if (!running) {
             timer.stop();
@@ -188,9 +120,13 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (running) {
-            move();
-            checkApple();
-            checkShortener();
+            snake.move();
+            if(apple.check()) {
+                apple = new Apple();
+            }
+            if(shortener != null && shortener.check()) {
+                shortener = null;
+            }
             checkCollisions();
         }
         repaint();
